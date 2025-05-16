@@ -1,0 +1,30 @@
+# Use official PostgreSQL 15 image as base
+FROM docker.io/library/postgres:15
+
+# Install build dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    ca-certificates \
+    git \
+    postgresql-server-dev-15
+
+# Clone and install pgvector
+RUN git clone --branch v0.5.1 https://github.com/pgvector/pgvector.git /tmp/pgvector && \
+    cd /tmp/pgvector && \
+    make && \
+    make install
+
+# Clean up
+RUN apt-get remove -y build-essential git postgresql-server-dev-15 && \
+    apt-get autoremove -y && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+# Copy initialization script
+COPY ./docker-entrypoint-initdb.d/ /docker-entrypoint-initdb.d/
+
+# Expose PostgreSQL port
+EXPOSE 5432
+
+# Set the default command to run when starting the container
+CMD ["postgres"]
